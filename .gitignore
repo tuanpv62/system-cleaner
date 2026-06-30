@@ -1,9 +1,39 @@
-# Build output
+# ===========================
+# Build Output
+# ===========================
 bin/
 obj/
 publish/
-.vs/
+publish*/
 
-# User files
+# Visual Studio
+.vs/
 *.user
 *.suo
+*.userosscache
+*.sln.docstates
+
+# Rider
+.idea/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Temp
+*.tmp
+*.cache
+
+# NuGet
+packages/
+*.nupkg
+
+# OS Files
+Thumbs.db
+Desktop.ini
+
+# GitHub Assets (optional)
+Assets/demo.gif
+Assets/*.tmp
