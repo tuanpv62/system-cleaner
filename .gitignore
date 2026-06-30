@@ -1,7 +1,9 @@
+# Build output
 bin/
 obj/
+publish/
 .vs/
+
+# User files
 *.user
 *.suo
-*.cache
-*.log
