@@ -1,0 +1,18 @@
+System Cleaner is a Windows desktop utility built with .NET 8 WinForms.
+
+It supports:
+- system cleanup
+- RAMMap integration
+- scheduled execution
+- tray notifications
+- activity logging
+
+Repository topics:
+- csharp
+- dotnet
+- winforms
+- windows
+- cleanup
+- scheduler
+- tray-icon
+- rammap

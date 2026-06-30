@@ -1,0 +1,10 @@
+csharp
+dotnet
+dotnet8
+winforms
+windows
+desktop-app
+cleanup
+scheduler
+tray-icon
+rammap
