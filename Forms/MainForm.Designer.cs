@@ -1,4 +1,4 @@
-// File: Forms/MainForm.Designer.cs - UI thuần WinForms .NET 8 (không cần DevExpress)
+// File: Forms/MainForm.Designer.cs - UI thuần WinForms .NET 8
 #nullable enable
 
 using System;
@@ -12,9 +12,12 @@ namespace SystemCleaner.Forms
     {
         private IContainer? components = null;
 
+        // ── ⚙ Settings button ────────────────────────────────────────────────
+        private Button btnSettings;
+
         // ── Layout ──────────────────────────────────────────────────────────
         private TableLayoutPanel tableLayoutMain;
-        private Panel             panelTopGroups;
+        private Panel            panelTopGroups;
 
         // ── Group 1: System Cleanup Tasks ───────────────────────────────────
         private GroupBox grpCleanup;
@@ -59,16 +62,14 @@ namespace SystemCleaner.Forms
         {
             components = new Container();
 
-            // ── Khởi tạo instances ──────────────────────────────────────────
+            btnSettings          = new Button();
             tableLayoutMain      = new TableLayoutPanel();
             panelTopGroups       = new Panel();
-
             grpCleanup           = new GroupBox();
             chkTempWindows       = new CheckBox();
             chkRecycleBin        = new CheckBox();
             chkPrefetch          = new CheckBox();
             chkUserTemp          = new CheckBox();
-
             grpRamMap            = new GroupBox();
             lblRamMapPath        = new Label();
             txtRamMapPath        = new TextBox();
@@ -78,7 +79,6 @@ namespace SystemCleaner.Forms
             chkModifiedPageList  = new CheckBox();
             chkStandbyList       = new CheckBox();
             chkPriority0Standby  = new CheckBox();
-
             grpSchedule          = new GroupBox();
             lblRunEvery          = new Label();
             spinInterval         = new NumericUpDown();
@@ -86,12 +86,11 @@ namespace SystemCleaner.Forms
             btnRunNow            = new Button();
             btnStartAuto         = new Button();
             btnStopAuto          = new Button();
-
             grpLog               = new GroupBox();
             memoLog              = new RichTextBox();
             btnClearLog          = new Button();
 
-            // ── SuspendLayout ───────────────────────────────────────────────
+            // ── SuspendLayout ────────────────────────────────────────────────
             ((ISupportInitialize)spinInterval).BeginInit();
             tableLayoutMain.SuspendLayout();
             panelTopGroups.SuspendLayout();
@@ -101,34 +100,59 @@ namespace SystemCleaner.Forms
             grpLog.SuspendLayout();
             SuspendLayout();
 
-            // ════════════════════════════════════════════════════════════════
-            //  tableLayoutMain — 3 hàng: top-groups | schedule | log
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
+            //  ⚙ SETTINGS BUTTON
+            //  Đặt trong tableLayoutMain cell (0,0) — TableLayoutPanel tự
+            //  quản lý kích thước cell → Anchor=Right luôn đúng, không phụ
+            //  thuộc vào thời điểm form layout giống cách đặt thẳng lên form.
+            // ═══════════════════════════════════════════════════════════════
+            btnSettings.Name      = "btnSettings";
+            btnSettings.Text      = "⚙";
+            btnSettings.Font      = new Font("Segoe UI", 13F);
+            btnSettings.Size      = new Size(36, 28);
+            btnSettings.Anchor    = AnchorStyles.Top | AnchorStyles.Right;
+            btnSettings.Margin    = new Padding(0, 3, 8, 0);
+            btnSettings.FlatStyle = FlatStyle.Flat;
+            btnSettings.FlatAppearance.BorderSize         = 1;
+            btnSettings.FlatAppearance.BorderColor        = Color.LightGray;
+            btnSettings.FlatAppearance.MouseOverBackColor = Color.FromArgb(220, 220, 220);
+            btnSettings.FlatAppearance.MouseDownBackColor = Color.FromArgb(190, 190, 190);
+            btnSettings.Cursor    = Cursors.Hand;
+            btnSettings.Click    += btnSettings_Click;
+
+            // ═══════════════════════════════════════════════════════════════
+            //  tableLayoutMain — 4 hàng:
+            //    row 0: toolbar (34px)  ← nút ⚙ ở đây
+            //    row 1: top-groups (238px)
+            //    row 2: schedule (78px)
+            //    row 3: log (fill)
+            // ═══════════════════════════════════════════════════════════════
             tableLayoutMain.Name        = "tableLayoutMain";
             tableLayoutMain.Dock        = DockStyle.Fill;
-            tableLayoutMain.Padding     = new Padding(6);
+            tableLayoutMain.Padding     = new Padding(6, 4, 6, 6);
             tableLayoutMain.ColumnCount = 1;
-            tableLayoutMain.RowCount    = 3;
+            tableLayoutMain.RowCount    = 4;
             tableLayoutMain.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
-            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 238F)); // top groups
-            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 78F));  // schedule
-            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));  // log (fill)
-            tableLayoutMain.Controls.Add(panelTopGroups, 0, 0);
-            tableLayoutMain.Controls.Add(grpSchedule,    0, 1);
-            tableLayoutMain.Controls.Add(grpLog,         0, 2);
+            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F));   // toolbar
+            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 238F));  // groups
+            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Absolute, 78F));   // schedule
+            tableLayoutMain.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));   // log
+            tableLayoutMain.Controls.Add(btnSettings,    0, 0);  // ← nút ⚙ vào row 0
+            tableLayoutMain.Controls.Add(panelTopGroups, 0, 1);
+            tableLayoutMain.Controls.Add(grpSchedule,    0, 2);
+            tableLayoutMain.Controls.Add(grpLog,         0, 3);
 
-            // ════════════════════════════════════════════════════════════════
-            //  panelTopGroups — grpCleanup (Left) | grpRamMap (Fill)
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
+            //  panelTopGroups
+            // ═══════════════════════════════════════════════════════════════
             panelTopGroups.Name = "panelTopGroups";
             panelTopGroups.Dock = DockStyle.Fill;
-            // Thứ tự add: Fill trước (index 0), Left sau (index 1 = docked first)
-            panelTopGroups.Controls.Add(grpRamMap);   // Dock=Fill
-            panelTopGroups.Controls.Add(grpCleanup);  // Dock=Left
+            panelTopGroups.Controls.Add(grpRamMap);
+            panelTopGroups.Controls.Add(grpCleanup);
 
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             //  GROUP 1 — System Cleanup Tasks
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             grpCleanup.Name  = "grpCleanup";
             grpCleanup.Text  = "System Cleanup Tasks";
             grpCleanup.Dock  = DockStyle.Left;
@@ -163,14 +187,13 @@ namespace SystemCleaner.Forms
             chkUserTemp.Size     = new Size(334, 22);
             chkUserTemp.Anchor   = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             //  GROUP 2 — RAMMap Options
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             grpRamMap.Name = "grpRamMap";
             grpRamMap.Text = "RAMMap Options";
             grpRamMap.Dock = DockStyle.Fill;
             grpRamMap.Font = new Font("Segoe UI", 9F);
-            // Add controls từ dưới lên (vấn đề z-order)
             grpRamMap.Controls.Add(chkPriority0Standby);
             grpRamMap.Controls.Add(chkStandbyList);
             grpRamMap.Controls.Add(chkModifiedPageList);
@@ -228,9 +251,9 @@ namespace SystemCleaner.Forms
             chkPriority0Standby.Size     = new Size(550, 22);
             chkPriority0Standby.Anchor   = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             //  GROUP 3 — Auto Schedule
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             grpSchedule.Name = "grpSchedule";
             grpSchedule.Text = "Auto Schedule";
             grpSchedule.Dock = DockStyle.Fill;
@@ -281,15 +304,15 @@ namespace SystemCleaner.Forms
             btnStopAuto.Size     = new Size(118, 28);
             btnStopAuto.Click   += btnStopAuto_Click;
 
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             //  GROUP 4 — Activity Log
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
             grpLog.Name = "grpLog";
             grpLog.Text = "Activity Log";
             grpLog.Dock = DockStyle.Fill;
             grpLog.Font = new Font("Segoe UI", 9F);
-            grpLog.Controls.Add(memoLog);      // add trước (dưới z-order)
-            grpLog.Controls.Add(btnClearLog);  // add sau (trên z-order)
+            grpLog.Controls.Add(memoLog);
+            grpLog.Controls.Add(btnClearLog);
 
             btnClearLog.Name     = "btnClearLog";
             btnClearLog.Text     = "\U0001F5D1  Clear Log";
@@ -298,20 +321,20 @@ namespace SystemCleaner.Forms
             btnClearLog.Anchor   = AnchorStyles.Top | AnchorStyles.Right;
             btnClearLog.Click   += btnClearLog_Click;
 
-            memoLog.Name      = "memoLog";
-            memoLog.Location  = new Point(10, 56);
-            memoLog.Size      = new Size(940, 300);
-            memoLog.Anchor    = AnchorStyles.Top | AnchorStyles.Bottom
-                              | AnchorStyles.Left | AnchorStyles.Right;
-            memoLog.Font      = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point);
-            memoLog.ReadOnly  = true;
-            memoLog.ScrollBars= RichTextBoxScrollBars.Both;
-            memoLog.WordWrap  = false;
-            memoLog.BackColor = SystemColors.Window; // trắng dù ReadOnly
+            memoLog.Name       = "memoLog";
+            memoLog.Location   = new Point(10, 56);
+            memoLog.Size       = new Size(940, 300);
+            memoLog.Anchor     = AnchorStyles.Top | AnchorStyles.Bottom
+                               | AnchorStyles.Left | AnchorStyles.Right;
+            memoLog.Font       = new Font("Consolas", 9F, FontStyle.Regular, GraphicsUnit.Point);
+            memoLog.ReadOnly   = true;
+            memoLog.ScrollBars = RichTextBoxScrollBars.Both;
+            memoLog.WordWrap   = false;
+            memoLog.BackColor  = SystemColors.Window;
 
-            // ════════════════════════════════════════════════════════════════
-            //  FORM PROPERTIES
-            // ════════════════════════════════════════════════════════════════
+            // ═══════════════════════════════════════════════════════════════
+            //  FORM
+            // ═══════════════════════════════════════════════════════════════
             Name                = "MainForm";
             Text                = "SystemCleaner  \u2013  System Cleanup Tool";
             ClientSize          = new Size(980, 760);
@@ -324,7 +347,7 @@ namespace SystemCleaner.Forms
             Load        += MainForm_Load;
             FormClosing += MainForm_FormClosing;
 
-            // ── ResumeLayout ────────────────────────────────────────────────
+            // ── ResumeLayout ─────────────────────────────────────────────────
             ((ISupportInitialize)spinInterval).EndInit();
             grpCleanup.ResumeLayout(false);
             grpRamMap.ResumeLayout(false);

@@ -17,12 +17,13 @@ namespace SystemCleaner
             Application.SetHighDpiMode(HighDpiMode.PerMonitorV2);
 
             // Khởi tạo Services (Dependency Injection thủ công)
-            var cleanerService   = new CleanerService();
-            var ramMapService    = new RamMapService();
-            var schedulerService = new SchedulerService();
-            var trayIconService  = new TrayIconService();
+            var cleanerService      = new CleanerService();
+            var ramMapService       = new RamMapService();
+            var schedulerService    = new SchedulerService();
+            var trayIconService     = new TrayIconService();
+            var appSettingsService  = new AppSettingsService();
 
-            Application.Run(new MainForm(cleanerService, ramMapService, schedulerService, trayIconService));
+            Application.Run(new MainForm(cleanerService, ramMapService, schedulerService, trayIconService, appSettingsService));
         }
     }
 }

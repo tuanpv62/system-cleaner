@@ -21,10 +21,11 @@ namespace SystemCleaner.Forms
         //  FIELDS
         // ═══════════════════════════════════════════════════════
 
-        private readonly ICleanerService  _cleanerService;
-        private readonly IRamMapService   _ramMapService;
-        private readonly SchedulerService _schedulerService;
-        private readonly ITrayIconService _trayIconService;
+        private readonly ICleanerService     _cleanerService;
+        private readonly IRamMapService      _ramMapService;
+        private readonly SchedulerService    _schedulerService;
+        private readonly ITrayIconService    _trayIconService;
+        private readonly IAppSettingsService _appSettingsService;
 
         /// <summary>Cờ ngăn concurrent run (job chồng job).</summary>
         private volatile bool _isJobRunning = false;
@@ -44,15 +45,17 @@ namespace SystemCleaner.Forms
 
         /// <summary>Khởi tạo MainForm với dependency injection thủ công.</summary>
         public MainForm(
-            ICleanerService  cleanerService,
-            IRamMapService   ramMapService,
-            SchedulerService schedulerService,
-            ITrayIconService trayIconService)
+            ICleanerService      cleanerService,
+            IRamMapService       ramMapService,
+            SchedulerService     schedulerService,
+            ITrayIconService     trayIconService,
+            IAppSettingsService  appSettingsService)
         {
-            _cleanerService   = cleanerService;
-            _ramMapService    = ramMapService;
-            _schedulerService = schedulerService;
-            _trayIconService  = trayIconService;
+            _cleanerService     = cleanerService;
+            _ramMapService      = ramMapService;
+            _schedulerService   = schedulerService;
+            _trayIconService    = trayIconService;
+            _appSettingsService = appSettingsService;
 
             InitializeComponent();
             LoadSettings();
@@ -104,22 +107,25 @@ namespace SystemCleaner.Forms
             }
         }
 
-        /// <summary>Dọn dẹp khi form đóng — hoặc ẩn xuống tray nếu Auto Schedule đang chạy.</summary>
+        /// <summary>Dọn dẹp khi form đóng — hoặc ẩn xuống tray theo cài đặt.</summary>
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
-            // Nếu Auto Schedule đang chạy và người dùng bấm nút X (không phải thoát
-            // đã xác nhận từ tray) → ẩn xuống tray, KHÔNG đóng app thật sự, để vẫn
-            // chạy ngầm theo đúng lịch đã đặt. CloseReason.UserClosing loại trừ các
-            // trường hợp Windows tắt máy/đăng xuất (khi đó vẫn phải đóng bình thường).
-            if (!_isExiting && _schedulerService.IsRunning && e.CloseReason == CloseReason.UserClosing)
+            bool settingMinimize = _appSettingsService.Current.MinimizeToTray;
+            bool shouldHide      = !_isExiting
+                                   && e.CloseReason == CloseReason.UserClosing
+                                   && (_schedulerService.IsRunning || settingMinimize);
+
+            if (shouldHide)
             {
                 e.Cancel      = true;
                 ShowInTaskbar = false;
                 Hide();
+                _trayIconService.Show(); // đảm bảo icon tray luôn hiện khi ẩn xuống
 
-                _trayIconService.ShowNotification(
-                    "SystemCleaner",
-                    "Ứng dụng vẫn chạy ngầm. Click vào icon khay hệ thống để mở lại.");
+                if (_appSettingsService.Current.ShowNotifications)
+                    _trayIconService.ShowNotification(
+                        "SystemCleaner",
+                        "Ứng dụng vẫn chạy ngầm. Click vào icon khay hệ thống để mở lại.");
                 return;
             }
 
@@ -129,13 +135,16 @@ namespace SystemCleaner.Forms
             _trayIconService.Dispose();
         }
 
-        /// <summary>Minimize-to-tray: khi thu nhỏ form lúc Auto Schedule đang chạy, ẩn khỏi taskbar.</summary>
+        /// <summary>Minimize-to-tray khi thu nhỏ cửa sổ (theo cài đặt hoặc khi scheduler đang chạy).</summary>
         private void MainForm_Resize(object? sender, EventArgs e)
         {
-            if (WindowState == FormWindowState.Minimized && _schedulerService.IsRunning)
+            bool shouldHide = WindowState == FormWindowState.Minimized
+                              && (_schedulerService.IsRunning || _appSettingsService.Current.MinimizeToTray);
+            if (shouldHide)
             {
                 Hide();
                 ShowInTaskbar = false;
+                _trayIconService.Show();
             }
         }
 
@@ -197,6 +206,10 @@ namespace SystemCleaner.Forms
             chkTempWindows.Checked = true;
             chkRecycleBin.Checked  = true;
             btnStopAuto.Enabled    = false;
+
+            // Áp dụng Default Interval từ AppSettings
+            var s = _appSettingsService.Current;
+            spinInterval.Value = Math.Clamp(s.DefaultInterval, 1, 1440);
         }
 
         // ═══════════════════════════════════════════════════════
@@ -228,7 +241,8 @@ namespace SystemCleaner.Forms
 
             // AppendText tự động scroll xuống cuối trong RichTextBox
             memoLog.AppendText((memoLog.TextLength > 0 ? Environment.NewLine : "") + line);
-            memoLog.ScrollToCaret();
+            if (_appSettingsService.Current.AutoScrollLog)
+                memoLog.ScrollToCaret();
         }
 
         // ═══════════════════════════════════════════════════════
@@ -407,9 +421,10 @@ namespace SystemCleaner.Forms
             // ── Bật tray icon: từ giờ app có thể chạy ngầm dưới nền Windows ──
             _trayIconService.Show();
             _trayIconService.SetState(TrayState.Waiting);
-            _trayIconService.ShowNotification(
-                "SystemCleaner",
-                $"Auto Schedule đã bật — chạy mỗi {minutes} phút.");
+            if (_appSettingsService.Current.ShowNotifications)
+                _trayIconService.ShowNotification(
+                    "SystemCleaner",
+                    $"Auto Schedule đã bật — chạy mỗi {minutes} phút.");
 
             _schedulerService.Start(minutes, async () =>
             {
@@ -425,9 +440,10 @@ namespace SystemCleaner.Forms
 
                 // ── Chuyển tray sang "đang chạy" (chấm cam) + thông báo 2s ───
                 _trayIconService.SetState(TrayState.Running);
-                _trayIconService.ShowNotification(
-                    "SystemCleaner",
-                    $"Đang chạy dọn dẹp tự động lúc {DateTime.Now:HH:mm:ss}.");
+                if (_appSettingsService.Current.ShowNotifications)
+                    _trayIconService.ShowNotification(
+                        "SystemCleaner",
+                        $"Đang chạy dọn dẹp tự động lúc {DateTime.Now:HH:mm:ss}.");
 
                 try
                 {
@@ -492,6 +508,26 @@ namespace SystemCleaner.Forms
         {
             memoLog.Clear();
             Log("INFO", "Log đã được xóa.");
+        }
+
+        /// <summary>Mở dialog Settings khi nhấn nút ⚙.</summary>
+        private void btnSettings_Click(object sender, EventArgs e)
+        {
+            using var form = new SettingsForm(_appSettingsService.Current);
+            if (form.ShowDialog(this) == DialogResult.OK && form.ResultSettings is not null)
+            {
+                _appSettingsService.Save(form.ResultSettings);
+                ApplySettings();
+                Log("INFO", "Cài đặt đã được lưu.");
+            }
+        }
+
+        /// <summary>Áp dụng settings mới lên các control hiện có.</summary>
+        private void ApplySettings()
+        {
+            var s = _appSettingsService.Current;
+            if (!_schedulerService.IsRunning)
+                spinInterval.Value = Math.Clamp(s.DefaultInterval, 1, 1440);
         }
     }
 }

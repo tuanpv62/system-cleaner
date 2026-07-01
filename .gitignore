@@ -37,3 +37,7 @@ Desktop.ini
 # GitHub Assets (optional)
 Assets/demo.gif
 Assets/*.tmp
+
+# Local automation scripts
+push.bat
+.pushcount
